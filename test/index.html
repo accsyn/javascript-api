@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload File</title>
+  <include type="javascript" href="../build/accsyn-javascript-client.min.js" />
+  <script type="javascript">
+    function handleUpload() {
+      try {
+        const { data } = await fetchApikey({ variables: { workspace: accsynWorkspace.id, scope: `upload:${accsynSession.METHOD_BROWSER}` } });
+        if (data && data.fetchApikey) {
+          if (!data.fetchApikey.success) {
+            setErrorMessage(data.fetchApikey.message);
+          } else {
+            let apiKey = data.fetchApikey.apiKey; // TODO: Store this in memory for reuse
+             // Create a temp accsyn client session
+            console.log("Fetched accsyn API key, creating accsyn client...");
+            let session = await accsynSession.create(accsynWorkspace.code, accsynUser.code, apiKey);
+            // Create job through client
+            session.upload(accsynSession.METHOD_BROWSER, {'parent':delivery_id, 'code': code}, file, browserProgressCallback).then((job) => {
+              alert("Upload in progress, id: "+job.id);
+            }, (error) => {
+              alert("Could not create accsyn upload job: "+error);
+            });
+          }
+        } else {
+          setErrorMessage("No response return when fetching JS API key");
+        }
+      } catch (error) {
+        console.log(error.stack);
+        alert("An error occurred when uploading with accsyn: "+error.message);
+      }
+    }
+  </script>
+</head>
+<body>
+
+<h2>Upload File</h2>
+<form method="post" enctype="multipart/form-data" onsubmit="return handleUpload()">
+  Select file to upload:
+  <input type="file" name="file" id="file">
+  <input type="submit" value="Upload File" name="submit">
+</form>
+
+</body>
+</html>
