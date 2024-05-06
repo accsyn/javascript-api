@@ -18,14 +18,14 @@ npm install typescript terser
 Compile .ts to js:
 
 ```
-tsc src/accsyn-javascript-client.ts --outDir build/
+tsc
 ```
 
 
 Minify:
 
 ```
-node_modules/.bin/terser build/accsyn-javascript-client.js --mangle reserved=['accsynSession'] -o build/accsyn-javascript-client.min.js
+node_modules/.bin/terser build/accsyn-javascript-client.js -o test/accsyn-javascript-client.min.js
 ```
 
 
@@ -36,12 +36,16 @@ node_modules/.bin/terser build/accsyn-javascript-client.js --mangle reserved=['a
 1. Create and spawn a new accsyn workspace, with "webapi" licensing option.
 2. Create an API key for the user.
 3. Spawn the file server
-4. Edit index html, entering the workspace code, admin user email, the API key and the absolute destination folder path for upload on file server.
-5. Make sure file server is reachable from test machine.
+4. Make sure file server is reachable from test machine.
+5. Install http-server: `npm install http-server`
 
 ### Test upload a file
 
-1. Open index.html in your web browser.
-2. Choose one(1) file to upload.
-3. It should upload to the file server at the given path.
+1. Build JS (see above)
+2. Copy js to test/ folder.
+3. Start http-server within test/ folder: `../node_modules/.bin/http-server -p 8282 -c-1`
+4. Open URL in a browser: `http://localhost:8282`
+5. Enter your workspace credentials, and local destination path on file server.
+6. Choose a file to upload.
+7. Check to console for logs and progress feedback.
 

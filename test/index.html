@@ -1,45 +1,91 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Upload File</title>
-  <include type="javascript" href="../build/accsyn-javascript-client.min.js" />
-  <script type="javascript">
-    function handleUpload() {
-      try {
-        const { data } = await fetchApikey({ variables: { workspace: accsynWorkspace.id, scope: `upload:${accsynSession.METHOD_BROWSER}` } });
-        if (data && data.fetchApikey) {
-          if (!data.fetchApikey.success) {
-            setErrorMessage(data.fetchApikey.message);
-          } else {
-            let apiKey = data.fetchApikey.apiKey; // TODO: Store this in memory for reuse
-             // Create a temp accsyn client session
-            console.log("Fetched accsyn API key, creating accsyn client...");
-            let session = await accsynSession.create(accsynWorkspace.code, accsynUser.code, apiKey);
-            // Create job through client
-            session.upload(accsynSession.METHOD_BROWSER, {'parent':delivery_id, 'code': code}, file, browserProgressCallback).then((job) => {
-              alert("Upload in progress, id: "+job.id);
-            }, (error) => {
-              alert("Could not create accsyn upload job: "+error);
-            });
-          }
-        } else {
-          setErrorMessage("No response return when fetching JS API key");
-        }
-      } catch (error) {
-        console.log(error.stack);
-        alert("An error occurred when uploading with accsyn: "+error.message);
-      }
-    }
-  </script>
+  <title>accsyn Javascript API test - Upload File</title>
+  <script src="https://unpkg.com/systemjs/dist/system.js"></script>
 </head>
 <body>
 
 <h2>Upload File</h2>
-<form method="post" enctype="multipart/form-data" onsubmit="return handleUpload()">
-  Select file to upload:
-  <input type="file" name="file" id="file">
-  <input type="submit" value="Upload File" name="submit">
+<form method="post" enctype="multipart/form-data" onsubmit="return handleUpload(event)">
+  <p>
+    Workspace: <input type="text" id="workspace" value="axle">
+  </p>
+  <p>
+    User (email): <input type="text" id="user" size="40"  value="webapi.admin@accsyn.com">
+  </p>
+  <p>
+    API key (secret): <input type="text" id="apikey" size="100" value="rlmoFv01J5jp1m0GNDdGdUzuTHKAzVAL9U1rjaS81CTvtUPH0QQKT5v8yrMuntwH">
+  </p>
+  <p>
+    Destination path: <input type="text" size="100"  id="destination_path" value="/tmp/">
+  </p>
+  <hr>
+  <p>
+    Select file to upload:
+  </p>
+  <p>
+    <input type="file" name="file" id="file" style="font-weight: bold;">
+  </p>
+  <hr>
+  <input type="submit" value="Upload File" name="submit" style="background: greenyellow;">
 </form>
 
 </body>
+<script lang="Javascript">
+  
+  for (var property in this) {
+    try {
+        console.log(property + ": " + this[property]);
+    } catch (error) {
+        warning(error.stack+"");
+    }
+  }
+
+  /*var accsynSession = accsyn_javascript_client.default;
+
+  console.log("accsynSession: "+accsynSession.METHOD_BROWSER);*/
+  
+  var accsynSession = null;
+
+  System.import('./accsyn-javascript-client.min.js').then(function(module) {
+    accsynSession = module.default;
+    console.log("Loaded accsyn javascript client module v"+accsynSession.VERSION);
+  });
+
+  //let accsynSession = null;
+
+  async function browserProgressCallback(progress) {
+    console.log("Progress: "+progress);
+  }
+
+  async function handleUpload(event) {
+    event.preventDefault();
+
+    try {
+      let workspace = document.getElementById("workspace").value;
+      let user = document.getElementById("user").value;
+      let apiKey = document.getElementById("apikey").value;
+      let file = document.getElementById("file").files[0];
+      let destinationPath = document.getElementById("destination_path").value;
+      
+      // Create a temp accsyn client session
+      console.log("Creating accsyn client (v"+accsynSession.VERSION+")...");
+      accsynSession.devMode = true;
+      let session = await accsynSession.create(workspace, user, apiKey);
+      // Create job through client
+      session.upload(accsynSession.METHOD_BROWSER, {'path':destinationPath+"/"+file.name}, file, browserProgressCallback).then((job) => {
+        alert("Upload in progress, id: "+job.id);
+      }, (error) => {
+        alert("Could not create accsyn upload job: "+error);
+      });
+    } catch (error) {
+      console.log(error.stack);
+      alert("An error occurred when uploading with accsyn: "+error.message);
+    }
+  }
+  
+
+
+</script>
 </html>
