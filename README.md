@@ -1,9 +1,17 @@
 # accsyn Javascript API
 
+---
+**NOTE**
+
+The API is currently in beta/testing phase and not suitable for production.
+
+---
+
+
 Currently designed to:
 
-1. Drive file transfers from accsyn v3 frontend.
-2. Support browser uploads for `webapi` type v3 workspaces.
+1. Drive file transfers from with the accsyn v3 frontend.
+2. Support browser uploads for `api` type v3 workspaces.
 
 
 ## Build
@@ -25,7 +33,7 @@ tsc
 Minify:
 
 ```
-node_modules/.bin/terser build/accsyn-javascript-client.js -o test/accsyn-javascript-client.min.js
+terser build/accsyn-javascript-client.js -o test/accsyn-javascript-client.min.js
 ```
 
 

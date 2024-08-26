@@ -1,7 +1,11 @@
 {
+  "name": "accsyn-javascript-api",
+  "private": true,
+  "version": "0.9.0",
+  "type": "module",
   "dependencies": {
     "http-server": "^14.1.1",
-    "terser": "^5.31.0",
-    "typescript": "^5.4.5"
+    "terser": "^5.31.6",
+    "typescript": "^5.5.4"
   }
 }

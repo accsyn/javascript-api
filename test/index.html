@@ -6,16 +6,16 @@
 </head>
 <body>
 
-<h2>Upload File</h2>
+<h2>Upload test file</h2>
 <form method="post" enctype="multipart/form-data" onsubmit="return handleUpload(event)">
   <p>
-    Workspace: <input type="text" id="workspace" value="axle">
+    Workspace: <input type="text" id="workspace" value="axel">
   </p>
   <p>
     User (email): <input type="text" id="user" size="40"  value="webapi.admin@accsyn.com">
   </p>
   <p>
-    API key (secret): <input type="text" id="apikey" size="100" value="rlmoFv01J5jp1m0GNDdGdUzuTHKAzVAL9U1rjaS81CTvtUPH0QQKT5v8yrMuntwH">
+    API key (secret): <input type="text" id="apikey" size="100" value="Txgq10YAfnkXl025qCnXIObevky2BQePUmuMPhVvHJV3OTBR3C312TyTUVyNjvQ0">
   </p>
   <p>
     Destination path: <input type="text" size="100"  id="destination_path" value="/tmp/">
@@ -28,7 +28,7 @@
     <input type="file" name="file" id="file" style="font-weight: bold;">
   </p>
   <hr>
-  <input type="submit" value="Upload File" name="submit" style="background: greenyellow;">
+  <input type="submit" value="Upload File" name="submit" style="background: #55c3aa; border: none; min-width: 100px; min-height: 33px; color: white; font-weight: bold;">
 </form>
 
 </body>
@@ -71,10 +71,14 @@
       
       // Create a temp accsyn client session
       console.log("Creating accsyn client (v"+accsynSession.VERSION+")...");
-      accsynSession.devMode = true;
+      
+      // Uncomment to enable dev mode
+      //accsynSession.devMode = true;
+      accsynSession.debugMode = true;
+
       let session = await accsynSession.create(workspace, user, apiKey);
       // Create job through client
-      session.upload(accsynSession.METHOD_BROWSER, {'path':destinationPath+"/"+file.name}, file, browserProgressCallback).then((job) => {
+      session.upload(accsynSession.METHOD_BROWSER, {'path':destinationPath}, file, browserProgressCallback).then((job) => {
         alert("Upload in progress, id: "+job.id);
       }, (error) => {
         alert("Could not create accsyn upload job: "+error);
