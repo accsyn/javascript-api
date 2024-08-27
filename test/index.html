@@ -38,17 +38,15 @@
 </body>
 <script lang="Javascript">
   
-  for (var property in this) {
-    try {
-        console.log(property + ": " + this[property]);
-    } catch (error) {
-        warning(error.stack+"");
+  if (false) {
+    for (var property in this) {
+      try {
+          console.log(property + ": " + this[property]);
+      } catch (error) {
+          warning(error.stack+"");
+      }
     }
   }
-
-  /*var accsynSession = accsyn_javascript_client.default;
-
-  console.log("accsynSession: "+accsynSession.METHOD_BROWSER);*/
   
   var accsynSession = null;
 
@@ -56,8 +54,6 @@
     accsynSession = module.default;
     console.log("Loaded accsyn javascript client module v"+accsynSession.VERSION);
   });
-
-  //let accsynSession = null;
 
   async function sessionStatusCallback(status) {
     appendLog(status);
@@ -105,11 +101,10 @@
       });
     } catch (error) {
       appendLog(error.stack);
-      alert("An error occurred when uploading with accsyn: "+error.message);
+      appendLog("An error occurred when uploading with accsyn: "+error.message, true);
     }
   }
   
-
 
 </script>
 </html>
