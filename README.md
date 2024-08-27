@@ -14,8 +14,15 @@ Currently designed to:
 2. Support browser uploads for `api` type v3 workspaces.
 
 
-## Build
+## Developing
 
+The Javascript API is currently closed source.
+
+
+## Building
+
+
+### Build from source (internal)
 
 Install dependencies:
 
@@ -36,9 +43,11 @@ Minify:
 terser build/accsyn-javascript-client.js -o test/accsyn-javascript-client.min.js
 ```
 
-## Download
+### Download minified artifeact 
 
-Download the latest release of `accsyn-javascript-client.min.js` from Git hub releases.
+
+Download the latest release of `accsyn-javascript-client.min.js` from [Git hub releases](https://github.com/accsyn/javascript-api/releases/latest).
+
 
 
 ## Testing
