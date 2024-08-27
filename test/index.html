@@ -9,16 +9,16 @@
 <h2>Upload test file</h2>
 <form method="post" enctype="multipart/form-data" onsubmit="return handleUpload(event)">
   <p>
-    Workspace: <input type="text" id="workspace" value="axel">
+    Workspace: <input type="text" id="workspace" value="axletest1">
   </p>
   <p>
     User (email): <input type="text" id="user" size="40"  value="webapi.admin@accsyn.com">
   </p>
   <p>
-    API key (secret): <input type="text" id="apikey" size="100" value="Txgq10YAfnkXl025qCnXIObevky2BQePUmuMPhVvHJV3OTBR3C312TyTUVyNjvQ0">
+    API key (secret): <input type="text" id="apikey" size="100" placeholder="Txgq10YAfnkXl025qCnXIObevky2BQePUmuMPhVvHJV3OTBR3C312TyTUVyNjvQ0">
   </p>
   <p>
-    Destination path: <input type="text" size="100"  id="destination_path" value="/tmp/">
+    Destination path: <input type="text" size="100"  id="destination_path" placeholder="/tmp/">
   </p>
   <hr>
   <p>
@@ -30,6 +30,10 @@
   <hr>
   <input type="submit" value="Upload File" name="submit" style="background: #55c3aa; border: none; min-width: 100px; min-height: 33px; color: white; font-weight: bold;">
 </form>
+<br></br>
+<textarea rows="30" cols="160" id="log" style="font-family: 'Courier New', Courier, monospace;">
+
+</textarea>
 
 </body>
 <script lang="Javascript">
@@ -55,13 +59,27 @@
 
   //let accsynSession = null;
 
+  async function sessionStatusCallback(status) {
+    appendLog(status);
+  }
+
   async function browserProgressCallback(progress) {
-    console.log("Progress: "+progress);
+    appendLog(JSON.stringify(progress));
+  }
+
+  function appendLog(message, do_alert) {
+    let raw_message = message;
+    message = "["+(new Date())+"] "+message;
+    let log = document.getElementById("log");
+    log.value += message+"\n";
+    console.log(message);
+    if (do_alert) {
+      alert(raw_message);
+    }
   }
 
   async function handleUpload(event) {
     event.preventDefault();
-
     try {
       let workspace = document.getElementById("workspace").value;
       let user = document.getElementById("user").value;
@@ -69,22 +87,25 @@
       let file = document.getElementById("file").files[0];
       let destinationPath = document.getElementById("destination_path").value;
       
+      // Clear log
+      document.getElementById("log").value = "";
+
       // Create a temp accsyn client session
-      console.log("Creating accsyn client (v"+accsynSession.VERSION+")...");
+      appendLog("Creating accsyn JS client (v"+accsynSession.VERSION+")...");
       
-      // Uncomment to enable dev mode
-      //accsynSession.devMode = true;
+      // Uncomment to enable debug mode
+      accsynSession.devMode = true;
       accsynSession.debugMode = true;
 
       let session = await accsynSession.create(workspace, user, apiKey);
       // Create job through client
-      session.upload(accsynSession.METHOD_BROWSER, {'path':destinationPath}, file, browserProgressCallback).then((job) => {
-        alert("Upload in progress, id: "+job.id);
+      session.upload(accsynSession.METHOD_BROWSER, {'path':destinationPath}, file, sessionStatusCallback, browserProgressCallback).then((job) => {
+        appendLog("Upload in progress: "+job.code+"(id: "+job.id+")", true);
       }, (error) => {
-        alert("Could not create accsyn upload job: "+error);
+        appendLog("Could not create accsyn upload job: "+error, true);
       });
     } catch (error) {
-      console.log(error.stack);
+      appendLog(error.stack);
       alert("An error occurred when uploading with accsyn: "+error.message);
     }
   }
