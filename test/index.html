@@ -94,7 +94,6 @@
       appendLog("Creating accsyn JS client (v"+accsynSession.VERSION+")...");
       
       // Uncomment to enable debug mode
-      accsynSession.devMode = true;
       accsynSession.debugMode = true;
 
       let session = await accsynSession.create(workspace, user, apiKey);
