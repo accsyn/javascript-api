@@ -97,7 +97,7 @@
       session.upload(accsynSession.METHOD_BROWSER, {'path':destinationPath}, file, sessionStatusCallback, browserProgressCallback).then((job) => {
         appendLog("Upload in progress: "+job.code+"(id: "+job.id+")", true);
       }, (error) => {
-        appendLog("Could not create accsyn upload job: "+error, true);
+        appendLog("Could not create accsyn upload job: "+JSON.stringify(error), true);
       });
     } catch (error) {
       appendLog(error.stack);
