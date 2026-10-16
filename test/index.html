@@ -1,110 +1,182 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>accsyn Javascript API test - Upload File</title>
-  <script src="https://unpkg.com/systemjs/dist/system.js"></script>
+  <meta charset="utf-8">
+  <title>accsyn JS API Interactive test</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+      font-family: sans-serif;
+      padding: 16px;
+      gap: 12px;
+    }
+    h1 { margin: 0; font-size: 1.25rem; }
+    form, #command { display: grid; gap: 8px; }
+    label { display: grid; gap: 4px; }
+    label.check { display: flex; align-items: center; gap: 8px; }
+    input, textarea, button { font: inherit; }
+    input, textarea { padding: 6px 8px; }
+    button {
+      justify-self: start;
+      background: #55c3aa;
+      color: white;
+      border: none;
+      min-width: 120px;
+      min-height: 36px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+    #command { display: none; }
+    #command textarea { resize: vertical; }
+    #log {
+      flex: 1;
+      width: 100%;
+      min-height: 160px;
+      box-sizing: border-box;
+      font-family: "Courier New", Courier, monospace;
+    }
+  </style>
 </head>
 <body>
+  <h1>accsyn JS API Interactive test</h1>
+  <form id="credentials">
+    <label class="check"><input id="dev" name="dev" type="checkbox"> Dev</label>
+    <label>Workspace <input id="workspace" name="workspace" autocomplete="off"></label>
+    <label>User <input id="user" name="user" autocomplete="off"></label>
+    <label>API key <input id="apiKey" name="apiKey" autocomplete="off"></label>
+    <button id="connect" type="submit">CONNECT</button>
+  </form>
+  <div id="command">
+    <label>Command
+      <textarea id="expression" rows="3" placeholder='session.find("Job")'>session.find("Job")</textarea>
+    </label>
+    <button id="run" type="button">RUN</button>
+  </div>
+  <textarea id="log" readonly></textarea>
+  <script type="module">
+    import { Session } from "/dist/index.js";
+    import { formatResult, runSessionCommand } from "/test/command.mjs";
 
-<h2>Upload test file</h2>
-<form method="post" enctype="multipart/form-data" onsubmit="return handleUpload(event)">
-  <p>
-    Workspace: <input type="text" id="workspace" value="axletest1">
-  </p>
-  <p>
-    User (email): <input type="text" id="user" size="40"  value="webapi.admin@accsyn.com">
-  </p>
-  <p>
-    API key (secret): <input type="text" id="apikey" size="100" placeholder="Txgq10YAfnkXl025qCnXIObevky2BQePUmuMPhVvHJV3OTBR3C312TyTUVyNjvQ0">
-  </p>
-  <p>
-    Destination path: <input type="text" size="100"  id="destination_path" placeholder="/tmp/">
-  </p>
-  <hr>
-  <p>
-    Select file to upload:
-  </p>
-  <p>
-    <input type="file" name="file" id="file" style="font-weight: bold;">
-  </p>
-  <hr>
-  <input type="submit" value="Upload File" name="submit" style="background: #55c3aa; border: none; min-width: 100px; min-height: 33px; color: white; font-weight: bold;">
-</form>
-<br></br>
-<textarea rows="30" cols="160" id="log" style="font-family: 'Courier New', Courier, monospace;">
+    const devInput = document.getElementById("dev");
+    const workspaceInput = document.getElementById("workspace");
+    const userInput = document.getElementById("user");
+    const apiKeyInput = document.getElementById("apiKey");
+    const connectButton = document.getElementById("connect");
+    const commandPanel = document.getElementById("command");
+    const expressionInput = document.getElementById("expression");
+    const runButton = document.getElementById("run");
+    const log = document.getElementById("log");
+    let session = null;
 
-</textarea>
+    function appendLog(message) {
+      log.value += `[${new Date().toISOString()}] ${message}\n`;
+      log.scrollTop = log.scrollHeight;
+    }
 
-</body>
-<script lang="Javascript">
-  
-  if (false) {
-    for (var property in this) {
+    async function withConsole(fn) {
+      const info = console.info.bind(console);
+      const warn = console.warn.bind(console);
+      console.info = (...args) => {
+        appendLog(args.map(String).join(" "));
+        info(...args);
+      };
+      console.warn = (...args) => {
+        appendLog(args.map(String).join(" "));
+        warn(...args);
+      };
       try {
-          console.log(property + ": " + this[property]);
-      } catch (error) {
-          warning(error.stack+"");
+        return await fn();
+      } finally {
+        console.info = info;
+        console.warn = warn;
       }
     }
-  }
-  
-  var accsynSession = null;
 
-  System.import('./accsyn-javascript-client.min.js').then(function(module) {
-    accsynSession = module.default;
-    console.log("Loaded accsyn javascript client module v"+accsynSession.VERSION);
-  });
-
-  async function sessionStatusCallback(status) {
-    appendLog(status);
-  }
-
-  async function browserProgressCallback(progress) {
-    appendLog(JSON.stringify(progress));
-  }
-
-  function appendLog(message, do_alert) {
-    let raw_message = message;
-    message = "["+(new Date())+"] "+message;
-    let log = document.getElementById("log");
-    log.value += message+"\n";
-    console.log(message);
-    if (do_alert) {
-      alert(raw_message);
+    function setConnected(connected) {
+      devInput.disabled = connected;
+      workspaceInput.disabled = connected;
+      userInput.disabled = connected;
+      apiKeyInput.disabled = connected;
+      connectButton.textContent = connected ? "DISCONNECT" : "CONNECT";
+      commandPanel.style.display = connected ? "grid" : "none";
     }
-  }
 
-  async function handleUpload(event) {
-    event.preventDefault();
     try {
-      let workspace = document.getElementById("workspace").value;
-      let user = document.getElementById("user").value;
-      let apiKey = document.getElementById("apikey").value;
-      let file = document.getElementById("file").files[0];
-      let destinationPath = document.getElementById("destination_path").value;
-      
-      // Clear log
-      document.getElementById("log").value = "";
-
-      // Create a temp accsyn client session
-      appendLog("Creating accsyn JS client (v"+accsynSession.VERSION+")...");
-      
-      // Uncomment to enable debug mode
-      accsynSession.debugMode = true;
-
-      let session = await accsynSession.create(workspace, user, apiKey);
-      // Create job through client
-      session.upload(accsynSession.METHOD_BROWSER, {'path':destinationPath}, file, sessionStatusCallback, browserProgressCallback).then((job) => {
-        appendLog("Upload in progress: "+job.code+"(id: "+job.id+")", true);
-      }, (error) => {
-        appendLog("Could not create accsyn upload job: "+JSON.stringify(error), true);
-      });
-    } catch (error) {
-      appendLog(error.stack);
-      appendLog("An error occurred when uploading with accsyn: "+error.message, true);
+      const response = await fetch("/env");
+      if (response.ok) {
+        const env = await response.json();
+        if (env.ACCSYN_WORKSPACE) workspaceInput.value = env.ACCSYN_WORKSPACE;
+        if (env.ACCSYN_API_USER) userInput.value = env.ACCSYN_API_USER;
+        if (env.ACCSYN_API_KEY) apiKeyInput.value = env.ACCSYN_API_KEY;
+        devInput.checked = env.AS_DEV === true;
+        if (env.ACCSYN_WORKSPACE || env.ACCSYN_API_USER || env.ACCSYN_API_KEY) {
+          appendLog("Loaded credentials from .env.");
+        } else {
+          appendLog("No ACCSYN_WORKSPACE, ACCSYN_API_USER, or ACCSYN_API_KEY in .env.");
+        }
+      }
+    } catch {
+      appendLog("Could not read .env. Start the page with npm run test:ui.");
     }
-  }
-  
 
-</script>
+    document.getElementById("credentials").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (session) {
+        session = null;
+        setConnected(false);
+        appendLog("Disconnected.");
+        return;
+      }
+      const workspace = workspaceInput.value.trim();
+      const username = userInput.value.trim();
+      const apiKey = apiKeyInput.value.trim();
+      if (!workspace || !username || !apiKey) {
+        appendLog("Workspace, user, and API key are required.");
+        return;
+      }
+      connectButton.disabled = true;
+      appendLog(`Connecting as ${username}@${workspace}...`);
+      try {
+        session = await withConsole(() => Session.connect({
+          workspace,
+          username,
+          apiKey,
+          verbose: true,
+          dev: devInput.checked,
+          pathEnvfile: "/no/such/accsyn.env",
+        }));
+        setConnected(true);
+        appendLog("Connected.");
+      } catch (error) {
+        session = null;
+        appendLog(`Connect failed: ${error.message}`);
+      } finally {
+        connectButton.disabled = false;
+      }
+    });
+
+    runButton.addEventListener("click", async () => {
+      if (!session) {
+        appendLog("Connect before running a command.");
+        return;
+      }
+      const command = expressionInput.value.trim();
+      appendLog(`> ${command}`);
+      runButton.disabled = true;
+      try {
+        const result = await withConsole(() => runSessionCommand(session, command));
+        appendLog(formatResult(result));
+      } catch (error) {
+        appendLog(`Run failed: ${error.message}`);
+      } finally {
+        runButton.disabled = false;
+      }
+    });
+  </script>
+</body>
 </html>

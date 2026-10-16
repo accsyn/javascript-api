@@ -1,11 +1,60 @@
 {
-  "name": "accsyn-javascript-api",
-  "private": true,
-  "version": "0.9.0",
+  "name": "accsyn",
+  "version": "3.4.0",
+  "description": "JavaScript API for accsyn programmable file delivery",
+  "license": "Apache-2.0",
   "type": "module",
-  "dependencies": {
-    "http-server": "^14.1.1",
-    "terser": "^5.31.6",
-    "typescript": "^5.5.4"
+  "author": "Henrik Norin <support@accsyn.com>",
+  "homepage": "https://accsyn.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/accsyn/javascript-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/accsyn/javascript-api/issues"
+  },
+  "keywords": [
+    "accsyn",
+    "api",
+    "file-transfer",
+    "delivery"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "smoke": "node tests/smoke.mjs",
+    "test:ui": "node test/serve.mjs",
+    "prepublishOnly": "npm run build",
+    "docs:api": "typedoc && node scripts/merge-api-docs.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.5",
+    "typedoc": "^0.28.0",
+    "typedoc-plugin-markdown": "^4.14.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.8"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "fsevents": true
   }
 }

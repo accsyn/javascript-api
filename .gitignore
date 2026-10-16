@@ -1,5 +1,12 @@
 node_modules
-package-lock.json
+dist
 build
-src
-test/accsyn-javascript-client.min.js
+.typedoc-out
+npm-debug.log*
+package-lock.json
+.DS_Store
+.env
+.cursor
+.vscode
+*.log
+*.tgz

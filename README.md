@@ -1,92 +1,85 @@
-# accsyn Javascript API
+# accsyn JavaScript API
 
----
-**NOTE**
+Programmable file delivery for accsyn. Version 3.4.0 matches the [accsyn Python API](https://github.com/accsyn/accsyn-python-api) session: create and query entities, grant access, list files, and read settings and logs.
 
-The API is currently in beta/testing phase and not suitable for production.
+## Install
 
----
-
-
-Currently designed to:
-
-1. Drive file transfers from with the accsyn v3 frontend.
-2. Support browser uploads for `api` type v3 workspaces.
-
-
-## Developing
-
-The Javascript API is currently closed source.
-
-
-## Building
-
-
-### Build from source (internal)
-
-Install dependencies:
-
-```
-npm install typescript terser
+```bash
+npm install accsyn
 ```
 
-Compile .ts to js:
+Node.js 18 or newer. The client uses `fetch`, so the same build also runs in browsers.
 
+```javascript
+import { Session } from "accsyn";
+
+const session = await Session.connect({
+  workspace: "acmefilm",
+  username: "john@user.com",
+  apiKey: process.env.ACCSYN_API_KEY,
+});
+
+const job = await session.create("transfer", {
+  source: "volume=projects/clip.mov",
+  destination: "client=664f53b16aa9149860da9d9c:/tmp/clip.mov",
+});
 ```
-tsc
+
+`Session.connect` reads `ACCSYN_WORKSPACE`, `ACCSYN_API_USER`, `ACCSYN_API_KEY`, and `ACCSYN_PROXY` when those arguments are omitted. Reuse one session. Workspace backends rate-limit REST calls per IP.
+
+The API queues transfers. It does not move the file bytes itself.
+
+Reference: <https://support.accsyn.com/developer/javascript-api/>
+
+## Develop
+
+```bash
+npm install
+npm test
+npm run build
+npm run smoke
 ```
 
+`npm run build` writes ESM, CommonJS, and TypeScript declarations to `dist/`. `prepublishOnly` runs the build.
 
-Minify:
+Generate the API reference and append it to the JavaScript API page in the docs site:
 
+```bash
+ACCSYN_DOC_ROOT=/path/to/doc/git npm run docs:api
 ```
-terser build/accsyn-javascript-client.js -o test/accsyn-javascript-client.min.js
+
+`ACCSYN_DOC_ROOT` is the docs repository. The script stops if it is missing.
+
+## Interactive test
+
+Build the client, then open the local test page. If a `.env` file in this directory defines `ACCSYN_WORKSPACE`, `ACCSYN_API_USER`, and `ACCSYN_API_KEY`, those values fill the form and can be edited before connecting. `AS_DEV=true` checks the Dev box, which connects to `127.0.0.1:8181`.
+
+```bash
+npm run build
+npm run test:ui
 ```
 
-### Download minified artifeact 
+Open <http://127.0.0.1:8282/>. CONNECT stores a session. RUN executes one expression on that session, for example `session.find("Job")`.
 
+## Publish
 
-Download the latest release of `accsyn-javascript-client.min.js` from [Git hub releases](https://github.com/accsyn/javascript-api/releases/latest).
+Releases go to npm as the public package `accsyn`. GitHub Actions publishes when a `v*` tag is pushed. The workflow runs `npm ci`, `npm test`, `npm run build`, `npm run smoke`, then `npm publish --access public`.
 
+Once, on the GitHub repository, add an Actions secret named `NPM_TOKEN`. Use an npm granular access token that can publish this package. The workflow passes it as `NODE_AUTH_TOKEN`.
 
-## Setup
+To release:
 
-To utilise an accsyn API workspace, you need to download and install the accsyn server/daemon:
+1. Set the same version in `package.json` and `src/version.ts`. npm publishes the `package.json` version. `src/version.ts` is the version the session reports.
+2. Commit that change.
+3. Tag the commit and push the tag. The tag must start with `v` and should match the package version.
 
-1. Download the installer for your platform here: [https://www.accsyn.com/download3](https://www.accsyn.com/download3)
-2. (Unix) Run chmod ugo+x ./accsyn-daemon-unix.sh
-3. Run the installer.
-4. When prompted, enter the on time burner server ID provided by accsyn staff in onboarding email.
-5. If not situated directly on the Internet, configure your firewall to NAT forward TCP traffic on ports 45190-45209 to the server LAN ip.
-6. Make sure the server has a static LAN IP, and incoming TCP traffic on ports 45190-45209 is blocked.
+```bash
+git tag v3.4.0
+git push origin v3.4.0
+```
 
-### Backup/migrate server
+npm rejects a version that is already published. Bump the version before tagging the next release.
 
-The accsyn server stores it's relevant configuration in this folder:
+## License
 
- - Linux; /var/lib/accsyn
- - Windows; C:\Programdata
- - Mac: /Library/Application Support/com.accsyn
-
-
-## Testing
-
-### Preparations
-
-1. Create and spawn a new accsyn workspace, with an "api" capable BYOS storage server license.
-2. Create an API key for the user.
-3. Spawn the file server
-4. Make sure file server is reachable from test machine, standard TCP ports 45190-45209
-5. Install http-server: `npm install http-server`
-
-### Test upload a file
-
-1. Build JS (see above)
-2. Copy js to test/ folder.
-3. Start http-server within test/ folder: `../node_modules/.bin/http-server -p 8282 -c-1`
-4. Open URL in a browser: `http://localhost:8282`
-5. Enter your workspace credentials, and local destination path on file server.
-6. Choose a file to upload.
-7. Click upload.
-8. Check to console for logs and progress feedback.
-
+Apache-2.0
