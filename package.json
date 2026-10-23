@@ -1,6 +1,6 @@
 {
   "name": "accsyn",
-  "version": "3.4.0",
+  "version": "3.6.8",
   "description": "JavaScript API for accsyn programmable file delivery",
   "license": "Apache-2.0",
   "type": "module",

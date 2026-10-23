@@ -356,6 +356,39 @@ describe("Session methods", () => {
       search: "hello",
       pagination: { limit: 10 },
     });
+    await session.logs({ entityType: "job", entityId: ENTITY_ID, paginationStart: -1, paginationSize: 50 });
+    expect(events(calls).at(-1)?.data).toMatchObject({
+      entitytype: "job",
+      pagination: { start: -1, size: 50 },
+    });
+    await expect(session.logs({ paginationSize: 1.5 })).rejects.toThrow(/pagination_size/);
+  });
+
+  it("reads process logs of a job", async () => {
+    const { session, calls } = await connect((call) => {
+      const event = eventOf(call);
+      if (event.uri === "job/process_log") {
+        return { uri: "task/1", try: 1, try_count: 2, text_master: "console output" };
+      }
+      return { result: true };
+    });
+    const last = () => events(calls).at(-1);
+
+    // The master log is fetched by default, for the first processed task and the latest try.
+    const response = await session.processLogs(ENTITY_ID);
+    expect(response.text_master).toBe("console output");
+    expect(last()).toMatchObject({ uri: "job/process_log", id: ENTITY_ID });
+    expect(last()?.data).toEqual({ master: true });
+    expect(calls.at(-1)?.method).toBe("GET");
+
+    await session.processLogs(ENTITY_ID, { uri: "task/1", tryNum: 0 });
+    expect(last()?.data).toEqual({ uri: "task/1", try: 0, master: true });
+
+    await session.processLogs(ENTITY_ID, { master: false, slave: true });
+    expect(last()?.data).toEqual({ slave: true });
+
+    await expect(session.processLogs("")).rejects.toThrow(/job ID/);
+    await expect(session.processLogs(ENTITY_ID, { tryNum: 1.5 })).rejects.toThrow(/try_num/);
   });
 
   it("checks clients, api keys, and integrations", async () => {

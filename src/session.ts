@@ -128,9 +128,31 @@ export interface LogOptions {
   search?: string;
   sort?: string;
   sortReverse?: boolean;
+  /**
+   * Accepted for parity with the Python API. The backend does not read `page`, `limit` and `skip`, use
+   * `paginationStart` and `paginationSize` instead.
+   */
   paginationPage?: number;
   paginationLimit?: number;
   paginationSkip?: number;
+  /**
+   * First row to return, counted from 1 in the sort order (oldest first by default). `-1` returns the last page,
+   * that is the newest `paginationSize` rows.
+   */
+  paginationStart?: number;
+  /** Number of rows to return. All rows are returned when omitted. */
+  paginationSize?: number;
+}
+
+export interface ProcessLogOptions {
+  /** URI of the task to read the log of. Defaults to the first task of the job that has been processed. */
+  uri?: string;
+  /** Zero-based try (attempt) number. Defaults to the latest try. */
+  tryNum?: number;
+  /** Fetch the master process log, the main process. Defaults to true. */
+  master?: boolean;
+  /** Fetch the slave process log, the file server party process. Can only be done by operators, for transfer jobs. */
+  slave?: boolean;
 }
 
 export interface AccessOptions {
@@ -815,11 +837,53 @@ export class Session {
       }
       pagination.skip = options.paginationSkip;
     }
+    if (options.paginationStart != null) {
+      if (!Number.isInteger(options.paginationStart)) {
+        throw new AccsynError("pagination_start must be an integer!");
+      }
+      pagination.start = options.paginationStart;
+    }
+    if (options.paginationSize != null) {
+      if (!Number.isInteger(options.paginationSize)) {
+        throw new AccsynError("pagination_size must be an integer!");
+      }
+      pagination.size = options.paginationSize;
+    }
     if (Object.keys(pagination).length > 0) {
       payload.pagination = pagination;
     }
     const response = await this.event("GET", "log/find", payload, { entityId: options.entityId });
     return response ?? { result: [] };
+  }
+
+  /**
+   * The detailed process log (console output) of a job task, for example the detailed transfer log.
+   *
+   * The console output is in `text_master` for the master process and `text_slave` for the slave process. The returned
+   * try is in `try`, the total number of tries in `try_count` and earlier tries in `process_history`, if any.
+   *
+   * @param entityId ID of the job to read the process log of.
+   */
+  async processLogs(entityId: string, options: ProcessLogOptions = {}): Promise<JsonObject> {
+    const jobId = requireText(entityId, "Invalid job ID supplied, must be of string type!");
+    const payload: JsonObject = {};
+    if (options.uri) {
+      payload.uri = options.uri;
+    }
+    if (options.tryNum != null) {
+      if (!Number.isInteger(options.tryNum)) {
+        throw new AccsynError("try_num must be an integer!");
+      }
+      payload.try = options.tryNum;
+    }
+    if (options.master ?? true) {
+      payload.master = true;
+    }
+    if (options.slave === true) {
+      payload.slave = true;
+    }
+    const response = await this.event("GET", "job/process_log", payload, { entityId: jobId });
+    return response ?? {};
   }
 
   /** Fetch the user API key. Often disabled server-side. */

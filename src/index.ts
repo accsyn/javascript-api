@@ -38,6 +38,7 @@ export type {
   FindOptions,
   JsonObject,
   LogOptions,
+  ProcessLogOptions,
   SessionOptions,
   SettingScope,
   SettingsOptions,
